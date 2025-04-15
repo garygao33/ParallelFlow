@@ -18,9 +18,10 @@ struct Edge {
 
 class Graph {
     int N;                                  // #vertices
+    int M;                                  // #edges
     vector<vector<Edge>> adj;               // adjacency list
 public:
-    explicit Graph(int n) : N(n), adj(n) {}
+    explicit Graph(int n, int m) : N(n), M(m), adj(n) {}
     void addEdge(int u, int v, int cap) {
         Edge fwd{v, cap, 0, static_cast<int>(adj[v].size())};
         Edge rev{u, 0,   0, static_cast<int>(adj[u].size())};
@@ -30,6 +31,20 @@ public:
     int size() const { return N; }
     vector<vector<Edge>>& getAdj() { return adj; }
 };
+
+Graph loadGraph(std::istream& in)
+{
+    int n, m;
+    if (!(in >> n >> m)) throw std::runtime_error("incorrect input format");
+
+    Graph g(n, m);
+    for (int i = 0; i < m; ++i) {
+        int u, v, cap;
+        in >> u >> v >> cap;
+        g.addEdge(u, v, cap);
+    }
+    return g;
+}
 
 
 // Build level graph
@@ -87,3 +102,14 @@ int maxFlow(Graph& g) {
     return total;
 }
 
+
+int main() {
+    try {
+        Graph g = loadGraph(cin);
+        cout << maxFlow(g) << '\n';
+    } catch (const exception& e) {
+        cerr << "Error: " << e.what() << '\n';
+        return 1;
+    }
+    return 0;
+}
