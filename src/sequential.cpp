@@ -43,50 +43,51 @@ Graph loadGraph(std::istream& in)
     int n, m;
     if (!(in >> n >> m)) throw std::runtime_error("incorrect input format");
 
-    Graph g(n, m);
+    Graph graph(n, m);
     for (int i = 0; i < m; ++i) {
         int u, v, cap;
         in >> u >> v >> cap;
-        g.addEdge(u, v, cap);
+        graph.addEdge(u, v, cap);
     }
-    return g;
+    return graph;
 }
 
 
 // Build level graph
-bool bfs(Graph& g, vector<int>& level) {
-    int n = g.size();
+bool constru_level_graph(Graph& graph, vector<int>& level) {
+    int n = graph.size();
     level.assign(n, -1);
     level[SOURCE] = 0;
-    queue<int> q;  q.push(SOURCE);
+    queue<int> que;
+    que.push(SOURCE);
 
-    auto& adj = g.getAdj();
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
-        for (const Edge& e : adj[u])
-            if (level[e.to] < 0 && e.flow < e.capacity) {
-                level[e.to] = level[u] + 1;
-                q.push(e.to);
+    auto& adj = graph.getAdj();
+    while (!que.empty()) {
+        int from = que.front(); que.pop();
+        for (const Edge& edge : adj[from])
+            if (level[edge.to] < 0 && edge.flow < edge.capacity) {
+                level[edge.to] = level[from] + 1;
+                que.push(edge.to);
             }
     }
     return level[SINK] >= 0;
 }
 
 // Send blocking flow (current‑arc optimisation)
-int dfs(Graph& g, int u, int pushed,
+int compute_block_flow(Graph& graph, int u, int pushed,
         vector<int>& level, vector<int>& next) {
     if (u == SINK || pushed == 0) return pushed;
-    auto& adj = g.getAdj();
+    auto& adj = graph.getAdj();
 
     for (int& i = next[u]; i < (int)adj[u].size(); ++i) {
-        Edge& e = adj[u][i];
-        if (e.capacity > e.flow && level[e.to] == level[u] + 1) {
-            int tr = dfs(g, e.to,
-                         min(pushed, e.capacity - e.flow),
+        Edge& edge = adj[u][i];
+        if (edge.capacity > edge.flow && level[edge.to] == level[u] + 1) {
+            int tr = compute_block_flow(graph, edge.to,
+                         min(pushed, edge.capacity - edge.flow),
                          level, next);
             if (tr) {
-                e.flow += tr;
-                adj[e.to][e.rev].flow -= tr;
+                edge.flow += tr;
+                adj[edge.to][edge.rev].flow -= tr;
                 return tr;
             }
         }
@@ -95,14 +96,14 @@ int dfs(Graph& g, int u, int pushed,
 }
 
 // main Dinic function
-int maxFlow(Graph& g) {
+int maxFlow(Graph& graph) {
     if (SOURCE == SINK) return 0;
-    int total = 0, n = g.size();
+    int total = 0, n = graph.size();
     vector<int> level(n), next(n);
 
-    while (bfs(g, level)) {
+    while (constru_level_graph(graph, level)) {
         fill(next.begin(), next.end(), 0);
-        while (int pushed = dfs(g, SOURCE, INT_MAX, level, next))
+        while (int pushed = compute_block_flow(graph, SOURCE, INT_MAX, level, next))
             total += pushed;
     }
     return total;
@@ -115,10 +116,10 @@ int main() {
 
         Graph g = loadGraph(cin);
         clock_t t1 = std::clock();
-        std::cout << "loading time = " << elapsed_ms(t0, t1) << " ms\n";
         clock_t t2 = std::clock();
         cout << maxFlow(g) << '\n';
         clock_t t3 = std::clock();
+        std::cout << "loading time = " << elapsed_ms(t0, t1) << " ms\n";
         std::cout << "compute time = " << elapsed_ms(t2, t3) << " ms\n";
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << '\n';
