@@ -3,8 +3,14 @@
 #include <queue>
 #include <algorithm>
 #include <climits>
+#include <ctime>
 
 using namespace std;
+
+double elapsed_ms(clock_t start, clock_t end)
+{
+    return 1000.0 * (end - start) / CLOCKS_PER_SEC;
+}
 
 #define SOURCE 0
 #define SINK   1
@@ -105,8 +111,15 @@ int maxFlow(Graph& g) {
 
 int main() {
     try {
+        clock_t t0 = std::clock();
+
         Graph g = loadGraph(cin);
+        clock_t t1 = std::clock();
+        std::cout << "loading time = " << elapsed_ms(t0, t1) << " ms\n";
+        clock_t t2 = std::clock();
         cout << maxFlow(g) << '\n';
+        clock_t t3 = std::clock();
+        std::cout << "compute time = " << elapsed_ms(t2, t3) << " ms\n";
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << '\n';
         return 1;
